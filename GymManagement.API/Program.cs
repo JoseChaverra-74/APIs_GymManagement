@@ -1,23 +1,55 @@
+using GymManagement.DataAccess.Context;
+using GymManagement.DataAccess.Repositories;
+//using GymManagement.DataAccess.Seeders;
+using GymManagement.Domain.Helpers;
+using GymManagement.Domain.Interfaces.Repositories;
+using GymManagement.Domain.Interfaces.Services;
+using GymManagement.Domain.Services;
+using Microsoft.EntityFrameworkCore;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+builder.Services.AddDbContext<GymDbContext>(options =>
+    options.UseSqlServer(
+        builder.Configuration.GetConnectionString("DefaultConnection")));
 
+builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
+builder.Services.AddScoped<IMembershipRepository, MembershipRepository>();
+builder.Services.AddScoped<IMemberRepository, MemberRepository>();
+builder.Services.AddScoped<ITrainerRepository, TrainerRepository>();
+builder.Services.AddScoped<IGymClassRepository, GymClassRepository>();
+builder.Services.AddScoped<IEnrollmentRepository, EnrollmentRepository>();
+
+builder.Services.AddScoped<IMembershipService, MembershipService>();
+builder.Services.AddScoped<IMemberService, MemberService>();
+builder.Services.AddScoped<ITrainerService, TrainerService>();
+builder.Services.AddScoped<IGymClassService, GymClassService>();
+builder.Services.AddScoped<IEnrollmentService, EnrollmentService>();
+builder.Services.AddScoped<GymValidationHelper>();
+
+builder.Services.AddAutoMapper(typeof(Program).Assembly);
 builder.Services.AddControllers();
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+//using (var scope = app.Services.CreateScope())
+//{
+//    var context = scope.ServiceProvider.GetRequiredService<GymDbContext>();
+//    await context.Database.MigrateAsync();
+//    await DataSeeder.SeedAsync(context);
+//}
+
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
+    app.UseSwagger();
+    app.UseSwaggerUI();
 }
 
+app.MapGet("/", () => Results.Redirect("/swagger"));
 app.UseHttpsRedirection();
-
 app.UseAuthorization();
-
 app.MapControllers();
 
 app.Run();
